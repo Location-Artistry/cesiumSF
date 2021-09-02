@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.84/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.84/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    //(async () => {
+    // Your access token can be found at: https://cesium.com/ion/tokens.
+    // This is the default access token from your ion account
+    const getdata = async () => {
+        const bbox = {'n':37.754525,'w':-122.43767,'e':-122.43193,'s':37.752192};
+        const url = (`https://data.sfgov.org/resource/ynuv-fyni.geojson?$limit=1000&$$app_token=A96uggjaQRRUuJLQ6Z0KGpoOb&$where=within_box(shape,${bbox.n},${bbox.w},${bbox.s},${bbox.e})`);
+        console.log(url);
+        const fetchData = await fetch(url);
+        const dataJSON = await fetchData.json();
+        return dataJSON;
+    };
+    //console.log(await getdata());
+    //const sfBuild = await getdata();
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyNTU3MjcyOS02YWVjLTQzMWItYjY2OS00MDEwZGQxYWFhMDEiLCJpZCI6MzYzMzYsInNjb3BlcyI6WyJsZ24iLCJwciIsImFjdyIsImFzbCIsImFzciIsImFzdyIsImFzcyIsImdjIiwibHIiLCJsdyIsInRyIiwidHciLCJ1c2ciXSwiaWF0IjoxNjMwMDk1MTk2LCJleHAiOjE2MzA2OTk5OTZ9.AM8dVwXzjYgbtAGu2FdHMDJgAn7qmHYyEYfQHP6DVjQ';
+
+    // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain()
+    });    
+    // Add Cesium OSM Buildings, a global 3D buildings layer.
+    //const buildingTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());   
+    // Fly the camera to San Francisco at the given longitude, latitude, and height.
+    viewer.camera.flyTo({
+      destination : Cesium.Cartesian3.fromDegrees(-122.40, 37.75, 1450),
+      orientation : {
+        heading : Cesium.Math.toRadians(0.0),
+        pitch : Cesium.Math.toRadians(-20.0),
+      }
+    });
+
+   /*
+    viewer.dataSources.add(Cesium.GeoJsonDataSource.load(sfBuild, {
+        stroke: Cesium.Color.HOTPINK,
+        fill: Cesium.Color.PINK,
+        strokeWidth: 3,
+        clampToGround: true,
+        extruddedHeight: 1000
+    }));
+    */
+    var entities = viewer.entities;
+
+   // sfBuild.features.forEach(element => {
+   //     console.log(element);
+   //  });
+
+    var promise = Cesium.IonResource.fromAssetId(581454)
+  .then(function (resource) {
+    return Cesium.GeoJsonDataSource.load(resource);
+  })
+  .then(function (dataSource) {
+    console.log(dataSource);
+    return viewer.dataSources.add(dataSource, {clampToGround: true});
+  })
+  .then(function (dataSource) {
+    return viewer.zoomTo(dataSource);
+  })
+  .otherwise(function (error) {
+    console.log(error);
+  });
+
+  //  })();
+  </script>
+ </div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.84/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.84/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+(async () => {
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxY2VjYjBiNC1lODY1LTQzOTEtYjZjOC05MWY0OTk2ZWFhMmYiLCJpZCI6MzYzMzYsImlhdCI6MTYwMzMzMzY2NH0.e1lio3YZUNvYWGl3A3dpl1c5AI83DntO_KkZH7CNAxE";
+
+const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain()
+    });   
+
+var entities = viewer.entities;
+
+const getData = async () => {
+        //const bbox = {'n':37.754525,'w':-122.43767,'e':-122.43193,'s':37.752192};
+        const bbox = {'n':37.8000,'w':-122.4050,'e':-122.3850,'s':37.7840};
+        const url = (`https://data.sfgov.org/resource/ynuv-fyni.geojson?$limit=10000&$$app_token=A96uggjaQRRUuJLQ6Z0KGpoOb&$where=within_box(shape,${bbox.n},${bbox.w},${bbox.s},${bbox.e})`);
+        const dataJSON = (await fetch(url)).json();
+        return dataJSON;
+    };
+
+const symbolizeLayer = async (dataSource, r) => {
+    const entities = dataSource.entities.values;
+    for (i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        const name = entity.name, h = entity.properties.hgt_median_m;
+        //AQUA, ALICEBLUE, AQUAMARINE, DARKTURQUOISE, PALETURQUOISE
+        entity.polygon.material = Cesium.Color.AQUA;
+        entity.polygon.material = h > (r[1] + (r[2]*.83)) ? Cesium.Color.NAVY : h > (r[1] + (r[2]*.66)) ? Cesium.Color.TEAL : h > (r[1] + (r[2]*.49)) ? Cesium.Color.LIGHTSEAGREEN : 
+            h > (r[1] + (r[2]*.32)) ? Cesium.Color.MEDIUMTURQUOISE : h > (r[1] + (r[2]*.16)) ? Cesium.Color.PALETURQUOISE : Cesium.Color.ALICEBLUE; 
+        //Remove the outlines.
+        entity.polygon.outline = false;
+        entity.polygon.extrudedHeight = (entity.properties.hgt_median_m * 2);
+    }
+    return viewer.dataSources.add(dataSource, {clampToGround: true, relativeToGround: true});
+};
+
+const getHeightRange = async (features) => {
+    const buildHeights = features.map(d => d.properties.hgt_median_m);
+    const max = buildHeights.reduce((d,i) => Math.max(d,i));
+    const min = buildHeights.reduce((d,i) => Math.min(d,i));
+    return [max,min,(max-min)];
+};
+
+//console.log(await getData());
+const geoData = await getData();
+const heights = await getHeightRange(geoData.features);
+//console.log(await heights);
+const dataSource = await Cesium.GeoJsonDataSource.load(geoData);
+const renderData = await symbolizeLayer(await dataSource, heights);
+const zoomData = viewer.zoomTo(await dataSource);
+
+
+/*
+const promise = Cesium.IonResource.fromAssetId(581454)
+  .then(function (resource) {
+    return Cesium.GeoJsonDataSource.load(resource);
+  })
+  .then(function (dataSource) {
+    //const heights = await getHeightRange(sfBuild.features);
+    const entities = dataSource.entities.values;
+    for (i = 0; i < entities.length; i++) {
+        const entity = entities[i];
+        const name = entity.name, h = entity.properties.hgt_median_m;
+        //AQUA, ALICEBLUE, AQUAMARINE, DARKTURQUOISE, PALETURQUOISE
+        //entity.polygon.material = h > 
+        Cesium.Color.AQUA;
+        //Remove the outlines.
+        entity.polygon.outline = false;
+        entity.polygon.extrudedHeight = (entity.properties.hgt_median_m * 2) + 100;
+      }
+    return viewer.dataSources.add(dataSource, {clampToGround: true, relativeToGround: true});
+  })
+  .then(function (dataSource) {
+    return viewer.zoomTo(dataSource);
+  })
+  .otherwise(function (error) {
+    console.log(error);
+  });
+  */
+
+    })();
+  </script>
+ </div>
+</body>
+</html>
